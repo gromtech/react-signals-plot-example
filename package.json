@@ -13,7 +13,8 @@
   },
   "dependencies": {
     "react": "15.5.4",
-    "react-dom": "15.5.4"
+    "react-dom": "15.5.4",
+    "react-signals-plot": "0.0.3"
   },
   "devDependencies": {
     "babel": "6.5.2",
