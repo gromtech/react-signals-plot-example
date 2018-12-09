@@ -1,9 +1,8 @@
 const webpack = require('webpack');
-const WebpackDevServer = require('webpack-dev-server');
 const path = require('path');
+const HtmlWebPackPlugin = require("html-webpack-plugin");
 
 const ROOT_PATH = path.resolve(__dirname);
-const UglifyJsPlugin = webpack.optimize.UglifyJsPlugin;
 const env = process.env.WEBPACK_ENV || 'dev';
 
 const appName = 'app';
@@ -14,28 +13,38 @@ const plugins = [];
 let outputFile;
 
 if (env === 'build') {
-  plugins.push(new UglifyJsPlugin({ minimize: true }));
   outputFile = `${appName}.min.js`;
 } else {
   outputFile = `${appName}.js`;
 }
 
+console.log('outputFile === ' + outputFile);
+console.log(`full path === ${__dirname}/lib`);
+
+const dev = env === 'dev';
+
+plugins.push(new HtmlWebPackPlugin({
+  template: "./public/index.html",
+  filename: "./index.html"
+}));
+
 const config = {
+  mode: dev ? 'development' : 'production',
   entry: './src/index.js',
   devtool: 'source-map',
   output: {
-    path: `${__dirname}/lib`,
+    path: path.join(__dirname, 'lib'),
     filename: outputFile,
-    publicPath: `${__dirname}/public`
+    publicPath: '/public/'
   },
   module: {
-    loaders: [
+    rules: [
       {
         test: /(\.jsx|\.js)$/,
-        loader: 'babel',
+        loader: 'babel-loader',
         exclude: /(node_modules|bower_components)/,
         query: {
-          presets: ['react', 'es2015']
+          presets: ['@babel/preset-env', '@babel/preset-react']
         }
       },
       {
@@ -50,29 +59,25 @@ const config = {
     ]
   },
   resolve: {
-    root: path.resolve('./src'),
-    extensions: ['', '.js', '.jsx'],
-    assets: path.resolve('./src/assets'),
-    components: path.resolve('./src/components'),
-    styles: path.resolve('./src/styles'),
-    services: path.resolve('./src/services')
+    modules: [path.resolve('./src'), 'node_modules'],
+    extensions: ['.js', '.jsx'],
+    alias: {
+      assets: path.resolve('./src/assets'),
+      components: path.resolve('./src/components'),
+      styles: path.resolve('./src/styles'),
+      services: path.resolve('./src/services'),
+      react: path.resolve(__dirname, 'node_modules', 'react')
+    }
   },
   plugins: plugins
 };
 
-if (env === 'dev') {
-  new WebpackDevServer(webpack(config), {
-    contentBase: './public',
-    hot: true,
-    debug: true
-  }).listen(port, host, (err) => {
-    if (err) {
-      console.log(err);
-    }
-  });
-  console.log('-------------------------');
-  console.log(`Local web server runs at http://${host}:${port}`);
-  console.log('-------------------------');
+if (dev) {
+  config.devServer = {
+    contentBase: path.join(__dirname, 'lib'),
+    compress: false,
+    port: port
+  };
 }
 
 module.exports = config;
